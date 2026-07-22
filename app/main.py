@@ -3,11 +3,31 @@ import os
 import random
 
 from fastapi import FastAPI, Header, HTTPException
-from starlette.responses import StreamingResponse
+from starlette.responses import HTMLResponse, StreamingResponse
 
 app = FastAPI()
 
 SYNC_TOKEN = os.environ["SYNC_TOKEN"]
+
+PAGE = """<!doctype html>
+<title>blumensync</title>
+<button onclick="start()">Start Sync</button>
+<pre id="out"></pre>
+<script>
+async function start() {
+  const token = prompt("Token?");
+  const res = await fetch("sync", {headers: {Authorization: "Bearer " + token}});
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  const out = document.getElementById("out");
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    out.textContent += decoder.decode(value);
+  }
+}
+</script>
+"""
 
 
 async def stream_generator():
@@ -28,6 +48,8 @@ async def stream_generator():
 
 @app.get("/sync")
 async def sync(authorization: str = Header(None)):
+    if authorization is None:
+        return HTMLResponse(PAGE)
     if authorization != f"Bearer {SYNC_TOKEN}":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return StreamingResponse(stream_generator(), media_type="text/plain")
