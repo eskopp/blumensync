@@ -5,3 +5,5 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8081:8000"
+    environment:
+      - SYNC_TOKEN=${SYNC_TOKEN:?SYNC_TOKEN must be set in .env}

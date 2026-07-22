@@ -1,10 +1,13 @@
 import asyncio
+import os
 import random
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from starlette.responses import StreamingResponse
 
 app = FastAPI()
+
+SYNC_TOKEN = os.environ["SYNC_TOKEN"]
 
 
 async def stream_generator():
@@ -24,5 +27,7 @@ async def stream_generator():
 
 
 @app.get("/sync")
-async def sync():
+async def sync(authorization: str = Header(None)):
+    if authorization != f"Bearer {SYNC_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return StreamingResponse(stream_generator(), media_type="text/plain")
