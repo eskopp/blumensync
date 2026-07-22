@@ -29,7 +29,7 @@ async def stream_generator():
             yield f"{pct}% - ERROR: sync failed\n"
             return
 
-        yield f"{pct}% - syncing factsheet images...\n"
+        yield f"{pct}% - syncing...\n"
 
     yield "100% - sync complete\n"
 
