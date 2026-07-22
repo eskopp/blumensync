@@ -11,22 +11,10 @@ SYNC_TOKEN = os.environ["SYNC_TOKEN"]
 
 PAGE = """<!doctype html>
 <title>blumensync</title>
-<button onclick="start()">Start Sync</button>
-<pre id="out"></pre>
-<script>
-async function start() {
-  const token = prompt("Token?");
-  const res = await fetch("sync", {headers: {Authorization: "Bearer " + token}});
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  const out = document.getElementById("out");
-  while (true) {
-    const {done, value} = await reader.read();
-    if (done) break;
-    out.textContent += decoder.decode(value);
-  }
-}
-</script>
+<h1>blumensync</h1>
+<p>Fake-Version des factsheet_images /sync Endpoints. Gibt alle 1-10 Sekunden eine Fortschrittszeile in 10%-Schritten aus, 80% der Laeufe erfolgreich, 20% brechen mit einem Fehler ab.</p>
+<p>Aufruf per curl:</p>
+<pre>curl -N -H "Authorization: Bearer &lt;TOKEN&gt;" https://dev.erik-skopp.de/blumen/sync</pre>
 """
 
 
