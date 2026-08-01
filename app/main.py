@@ -1,13 +1,31 @@
 import asyncio
-import os
 import random
+import time
+from collections import defaultdict
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from starlette.responses import HTMLResponse, Response, StreamingResponse
 
 app = FastAPI()
 
-SYNC_TOKEN = os.environ["SYNC_TOKEN"]
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX_REQUESTS = 5
+
+_request_log: dict[str, list[float]] = defaultdict(list)
+
+
+def enforce_rate_limit(client_ip: str) -> None:
+    now = time.monotonic()
+    window_start = now - RATE_LIMIT_WINDOW
+    recent = [t for t in _request_log[client_ip] if t > window_start]
+    if len(recent) >= RATE_LIMIT_MAX_REQUESTS:
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded, try again later",
+            headers={"Retry-After": str(RATE_LIMIT_WINDOW)},
+        )
+    recent.append(now)
+    _request_log[client_ip] = recent
 
 FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#0f1117"/>
@@ -22,8 +40,9 @@ PAGE = """<!doctype html>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <h1>blumensync</h1>
 <p>Fake sync endpoint. Emits a progress line every 1-10 seconds in 10% steps. About 80% of runs succeed, 20% fail partway through. The last line is always "true" or "false".</p>
+<p>No authentication required. Limited to {rate_limit_max} requests per {rate_limit_window}s per IP; further requests get HTTP 429.</p>
 <p>Call it with curl:</p>
-<pre>curl -N -H "Authorization: Bearer &lt;TOKEN&gt;" https://dev.erik-skopp.de/blumensync/sync</pre>
+<pre>curl -N https://dev.erik-skopp.de/blumensync/sync</pre>
 <p>Example successful run:</p>
 <pre>10% - syncing...
 20% - syncing...
@@ -41,7 +60,7 @@ true</pre>
 20% - syncing...
 30% - ERROR: sync failed
 false</pre>
-"""
+""".format(rate_limit_max=RATE_LIMIT_MAX_REQUESTS, rate_limit_window=RATE_LIMIT_WINDOW)
 
 
 async def stream_generator():
@@ -67,10 +86,14 @@ async def favicon():
     return Response(FAVICON, media_type="image/svg+xml")
 
 
+@app.get("/")
+async def index():
+    return HTMLResponse(PAGE)
+
+
 @app.get("/sync")
-async def sync(authorization: str = Header(None)):
-    if authorization is None:
-        return HTMLResponse(PAGE)
-    if authorization != f"Bearer {SYNC_TOKEN}":
-        raise HTTPException(status_code=401, detail="Unauthorized")
+async def sync(request: Request):
+    forwarded_for = request.headers.get("x-forwarded-for")
+    client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else request.client.host
+    enforce_rate_limit(client_ip)
     return StreamingResponse(stream_generator(), media_type="text/plain")
