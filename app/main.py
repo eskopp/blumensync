@@ -39,7 +39,7 @@ PAGE = """<!doctype html>
 <title>blumensync</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <h1>blumensync</h1>
-<p>Fake sync endpoint. Emits a progress line every 1-10 seconds in 10% steps. About 80% of runs succeed, 20% fail partway through. The last line is always "true" or "false".</p>
+<p>Fake sync endpoint. Emits a progress line every 1-10 seconds in 10% steps. About 80% of runs succeed, 20% fail partway through. The last line is always "True" or "False".</p>
 <p>No authentication required. Limited to {rate_limit_max} requests per {rate_limit_window}s per IP; further requests get HTTP 429.</p>
 <p>Call it with curl:</p>
 <pre>curl -N https://dev.erik-skopp.de/blumen/sync</pre>
@@ -54,12 +54,12 @@ PAGE = """<!doctype html>
 80% - syncing...
 90% - syncing...
 100% - sync complete
-true</pre>
+True</pre>
 <p>Example failed run:</p>
 <pre>10% - syncing...
 20% - syncing...
 30% - ERROR: sync failed
-false</pre>
+False</pre>
 """.format(rate_limit_max=RATE_LIMIT_MAX_REQUESTS, rate_limit_window=RATE_LIMIT_WINDOW)
 
 
@@ -72,13 +72,13 @@ async def stream_generator():
 
         if not success and pct >= stop_at:
             yield f"{pct}% - ERROR: sync failed\n"
-            yield "false\n"
+            yield "False\n"
             return
 
         yield f"{pct}% - syncing...\n"
 
     yield "100% - sync complete\n"
-    yield "true\n"
+    yield "True\n"
 
 
 @app.get("/favicon.svg")
