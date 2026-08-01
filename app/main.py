@@ -67,7 +67,7 @@ async def stream_generator():
     success = random.random() < 0.8
     stop_at = None if success else random.choice(range(10, 100, 10))
 
-    for pct in range(10, 101, 10):
+    for pct in range(10, 100, 10):
         await asyncio.sleep(random.uniform(1, 10))
 
         if not success and pct >= stop_at:
