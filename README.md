@@ -1,7 +1,7 @@
 # blumensync
 
 Fake/dev-only sync endpoint. Simulates a streaming `/sync` endpoint: emits
-progress in 10% steps at random 1-10s intervals, succeeds ~80% of runs,
+progress in 10% steps at fixed intervals, so a successful run takes 3 minutes, succeeds ~80% of runs,
 fails ~20% with an error line partway through. Not connected to any real
 CDN or image pipeline.
 

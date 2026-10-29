@@ -8,6 +8,9 @@ from starlette.responses import HTMLResponse, Response, StreamingResponse
 
 app = FastAPI()
 
+TOTAL_DURATION = 180  # seconds for a successful run
+STEPS = 10
+STEP_DELAY = TOTAL_DURATION / STEPS
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX_REQUESTS = 5
 
@@ -39,7 +42,7 @@ PAGE = """<!doctype html>
 <title>blumensync</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <h1>blumensync</h1>
-<p>Fake sync endpoint. Emits a progress line every 1-10 seconds in 10% steps. About 80% of runs succeed, 20% fail partway through. The last line is always "True" or "False".</p>
+<p>Fake sync endpoint. Emits a progress line every {step_delay:g} seconds in 10% steps, so a successful run takes {total_minutes:g} minutes. About 80% of runs succeed, 20% fail partway through. The last line is always "True" or "False".</p>
 <p>No authentication required. Limited to {rate_limit_max} requests per {rate_limit_window}s per IP; further requests get HTTP 429.</p>
 <p>Call it with curl:</p>
 <pre>curl -N https://blumen.erikskopp.de/sync</pre>
@@ -60,7 +63,12 @@ True</pre>
 20% - syncing...
 30% - ERROR: sync failed
 False</pre>
-""".format(rate_limit_max=RATE_LIMIT_MAX_REQUESTS, rate_limit_window=RATE_LIMIT_WINDOW)
+""".format(
+    rate_limit_max=RATE_LIMIT_MAX_REQUESTS,
+    rate_limit_window=RATE_LIMIT_WINDOW,
+    step_delay=STEP_DELAY,
+    total_minutes=TOTAL_DURATION / 60,
+)
 
 
 async def stream_generator():
@@ -68,7 +76,7 @@ async def stream_generator():
     stop_at = None if success else random.choice(range(10, 100, 10))
 
     for pct in range(10, 100, 10):
-        await asyncio.sleep(random.uniform(1, 10))
+        await asyncio.sleep(STEP_DELAY)
 
         if not success and pct >= stop_at:
             yield f"{pct}% - ERROR: sync failed\n"
@@ -77,6 +85,7 @@ async def stream_generator():
 
         yield f"{pct}% - syncing...\n"
 
+    await asyncio.sleep(STEP_DELAY)
     yield "100% - sync complete\n"
     yield "True\n"
 
