@@ -42,7 +42,7 @@ PAGE = """<!doctype html>
 <p>Fake sync endpoint. Emits a progress line every 1-10 seconds in 10% steps. About 80% of runs succeed, 20% fail partway through. The last line is always "True" or "False".</p>
 <p>No authentication required. Limited to {rate_limit_max} requests per {rate_limit_window}s per IP; further requests get HTTP 429.</p>
 <p>Call it with curl:</p>
-<pre>curl -N https://dev.erik-skopp.de/blumen/sync</pre>
+<pre>curl -N https://blumen.erikskopp.de/sync</pre>
 <p>Example successful run:</p>
 <pre>10% - syncing...
 20% - syncing...
